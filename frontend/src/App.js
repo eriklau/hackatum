@@ -14,6 +14,7 @@ export default function App() {
     }
   ])
 
+  const [fineTuningMessageVisible, setFineTuningMessageVisible] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackArray, setFeedbackArray] = useState([]);
@@ -113,6 +114,10 @@ export default function App() {
   };
 
   const handleFineTune = () => {
+    setFineTuningMessageVisible(true);
+    setTimeout(() => {
+      setFineTuningMessageVisible(false);
+    }, 5000);
     const fineTuneEndpoint = 'https://fine-tune-endpoint';
     // Send the feedback array to the fine-tune endpoint
     axios.post(fineTuneEndpoint, { feedbackArray })
@@ -193,8 +198,17 @@ export default function App() {
             </div>
           </form>
 
-          <div className='absolute top-0 left-0 p-3'>
-            <button onClick={handleFineTune} className='text-lg font-bold bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors duration-500'>Fine Tune</button>
+          <div className='absolute top-0 left-0 p-3 flex items-center'>
+            <button 
+              onClick={handleFineTune} 
+              className='text-lg font-bold bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors duration-500'>
+                Fine Tune
+            </button>
+            {fineTuningMessageVisible && (
+              <div className="text-center font-bold ml-4">
+                Fine tuning a new model...
+              </div>
+            )}
           </div>
         </>
       </div>
