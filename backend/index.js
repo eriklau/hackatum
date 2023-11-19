@@ -10,10 +10,12 @@ app.use(cors());
 const jsonParser = bodyParser.json()
 
 app.get('/', (req, res) => {
-    
+    res.status(200).send({
+        message: 'ok',
+    })
 })
 
-app.post('/api', jsonParser, async (req, res) => {
+app.post('/', jsonParser, async (req, res) => {
     try {
         const { body } = req;
         console.log("REQUEST:", body);

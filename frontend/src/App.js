@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import './App.css';
 import axios from "axios";
 import TypingAnimation from './components/TypingIndicator.js';
@@ -14,6 +14,10 @@ export default function App() {
     }
   ])
 
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackArray, setFeedbackArray] = useState([]);
+  const chatContainerRef = useRef(null);
   const handleSend = async (event) => {
     event.preventDefault();
 
@@ -26,14 +30,14 @@ export default function App() {
 
       const newMessages = [...messages, newMessage];
       setMessages(newMessages);
+      setInputValue('');
       setIsTyping(true);
       await processMessageToAssistant(newMessages);
-      setInputValue('');
     }
   }
 
   async function processMessageToAssistant(chatMessages) {
-    const url = `http://localhost:4000`;
+    const url = 'https://rl-gpt-backend-xgjv.onrender.com';
     let apiMessages = chatMessages.map((messageObject) => {
       let role = "";
       if (messageObject.sender === "assistant") {
@@ -53,23 +57,74 @@ export default function App() {
     }
 
     setIsTyping(true);
-    axios.post(url+'/api', apiRequestBody).then((response) => {
-      console.log(response.data.choices[0].message.content)
-      setMessages([...chatMessages, {
-        message: response.data.choices[0].message.content,
-        sender: "assistant"
-      }]);
+    try {
+      const response = await axios.post(url, apiRequestBody);
+      const assistantMessage = response.data.choices[0].message.content;
+
+      // Show feedback options
+      setShowFeedback(true);
+      setFeedbackMessage("Do you like this answer?");
+      scrollToBottom();
+
+      setMessages([...chatMessages, { message: assistantMessage, sender: "assistant" }]);
       setIsTyping(false);
-    }).catch((error) => {
+    } catch (error) {
       setIsTyping(false);
       console.error("GPT-3 API Error: ", error.response ? error.response.data : error.message);
       console.log(error);
-    })
+    }
   }
+
+  const handleFeedback = (feedback) => {
+    setShowFeedback(false);
+
+    // Check if user clicked "Yes"
+    if (feedback === "Yes") {
+      // Create a feedback object
+      const feedbackObject = {
+        prompt: messages[messages.length - 2].message, // User's message
+        completion: messages[messages.length - 1].message, // GPT's response
+      };
+
+      console.log("FEEDBACK OBJECT", feedbackObject)
+
+      // Send feedback to the backend endpoint
+      sendFeedbackToBackend(feedbackObject);
+      scrollToBottom();
+    }
+  }
+
+  const sendFeedbackToBackend = (feedbackObject) => {
+    const feedbackEndpoint = '127.0.0.1/good-suggestion?response=yes';
+    // Send the feedback object to the feedback endpoint
+    axios.post(feedbackEndpoint, { feedbackObject })
+      .then((response) => {
+        console.log("Feedback sent to backend:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error sending feedback:", error);
+      });
+  };
+
+  const scrollToBottom = () => {
+    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+  };
+
+  const handleFineTune = () => {
+    const fineTuneEndpoint = 'https://fine-tune-endpoint';
+    // Send the feedback array to the fine-tune endpoint
+    axios.post(fineTuneEndpoint, { feedbackArray })
+      .then((response) => {
+        console.log("Fine-tune successful:", response.data);
+      })
+      .catch((error) => {
+        console.error("Fine-tune error:", error);
+      });
+  };
 
   return (
     <div className='container mx-auto max-w-full'>
-      <div className='max-h-screen overflow-y-scroll flex flex-col h-screen bg-gray-100'>
+      <div className='max-h-screen overflow-y-scroll flex flex-col h-screen bg-gray-100' ref={chatContainerRef}>
         <div className='bg-blue-500'>
           <h1 className='text-white text-center py-3 font-bold text-4xl hover:text-blue-400 transition-colors duration-300 animate-rainbow'>RLearnChat</h1>
         </div>
@@ -102,6 +157,15 @@ export default function App() {
                   </div>
                 </div>
               )}
+              {showFeedback && (
+                <div className='flex justify-start'>
+                  <div className='bg-gray-400 rounded-lg p-5 text-white max-w-md shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer'>
+                    {feedbackMessage}
+                    <button onClick={() => handleFeedback("Yes")} className="mx-2 bg-green-500 px-3 py-1 rounded-md hover:bg-green-600 transition-colors duration-300">Yes</button>
+                    <button onClick={() => handleFeedback("No")} className="bg-red-500 px-3 py-1 rounded-md hover:bg-red-600 transition-colors duration-300">No</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -125,6 +189,10 @@ export default function App() {
               </button>
             </div>
           </form>
+
+          <div className='absolute top-0 left-0 p-3'>
+            <button onClick={handleFineTune} className='text-lg bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors duration-500'>Fine Tune</button>
+          </div>
         </>
       </div>
     </div>
