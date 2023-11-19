@@ -31,6 +31,7 @@ export default function App() {
       const newMessages = [...messages, newMessage];
       setMessages(newMessages);
       setInputValue('');
+      setShowFeedback(false);
       setIsTyping(true);
       await processMessageToAssistant(newMessages);
     }
@@ -60,6 +61,7 @@ export default function App() {
     try {
       const response = await axios.post(url, apiRequestBody);
       const assistantMessage = response.data.choices[0].message.content;
+      console.log(assistantMessage);
 
       // Show feedback options
       setShowFeedback(true);
@@ -125,7 +127,7 @@ export default function App() {
   return (
     <div className='container mx-auto max-w-full'>
       <div className='max-h-screen overflow-y-scroll flex flex-col h-screen bg-gray-100' ref={chatContainerRef}>
-        <div className='bg-blue-500'>
+        <div className='bg-blue-500 py-1'>
           <h1 className='text-white text-center py-3 font-bold text-4xl hover:text-blue-400 transition-colors duration-300 animate-rainbow'>RLearnChat</h1>
         </div>
         <>
@@ -142,9 +144,10 @@ export default function App() {
                     className={`${
                       message.sender === 'user' ? 'bg-purple-200' : 'bg-green-300'
                     } rounded-lg p-3 my-5 max-w-md shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer`}
+                    style={{ maxWidth: '90%' }}
                   >
                     <div
-                      dangerouslySetInnerHTML={{ __html: message.message }}
+                      dangerouslySetInnerHTML={{ __html: message.message.replace(/\n/g, '<br/>'), }}
                       className="font-semibold"
                     />
                   </div>
@@ -191,7 +194,7 @@ export default function App() {
           </form>
 
           <div className='absolute top-0 left-0 p-3'>
-            <button onClick={handleFineTune} className='text-lg bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors duration-500'>Fine Tune</button>
+            <button onClick={handleFineTune} className='text-lg font-bold bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors duration-500'>Fine Tune</button>
           </div>
         </>
       </div>
