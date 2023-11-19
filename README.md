@@ -31,6 +31,3 @@ Challenges and solutions in personalized learning algorithms.
     Further refining the RL algorithms for more nuanced personalization.
     Expanding the content scope to include a broader range of subjects.
     Exploring partnerships with educational institutions for real-world application.
-
-
-Github Repo: https://github.com/eriklau/hackatum
